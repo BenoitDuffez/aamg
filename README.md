@@ -6,7 +6,7 @@ This is a small tool that analyzes your code, and generates a migration script f
 ## Example
 
 Let's say that you have two models in your code:
-```
+```java
 $ cat Item.java
 @Table(name = "Items")
 public class Item extends Model {
@@ -34,7 +34,7 @@ public class Category extends Model {
 
 OK, now let's see what was added during the last commit:
 
-```
+```diff
 $ git log --pretty=oneline
 69889d65092d159bf2b2d6d7bc9f91ad33eb058b added price to item
 cb3188e95149f9f78cc763906e4ce91fe4ba9818 first version
@@ -62,7 +62,7 @@ index a9f497e..97534b5 100644
 
 The price was added to `Item`. What would be the migration script?
 
-```
+```sql
 $ java -cp ~/projects/aamg/ GenerateAaMigration Item.java 69889d65092d159bf2b2d6d7bc9f91ad33eb058b
 BEGIN TRANSACTION;
 
@@ -75,7 +75,7 @@ COMMIT;
 
 The tool can be launched without the SHA1 argument, in which case it will compare the current state of the files with `HEAD`:
 
-```
+```diff
 $ git diff
 diff --git a/Category.java b/Category.java
 index 94ca9fd..e04e7eb 100644
@@ -97,7 +97,7 @@ index 94ca9fd..e04e7eb 100644
 
 Here the `name` column was dropped, and two other columns are created:
 
-```
+```sql
 $ java -cp ~/projects/aamg/ GenerateAaMigration Category.java
 BEGIN TRANSACTION;
 
@@ -115,7 +115,7 @@ Since we can't drop columns with SQLite, a copy of the table is made and the dat
 
 OK now let's assume that we don't want to use an `int` in the code for the color, but an object. Let's see how it looks like:
 
-```
+```java
 $ cat Color.java
 class Color {
     public int red, green, blue;
@@ -164,7 +164,7 @@ The `TypeSerializer` simply stores the `Color` object in the DB by packing/unpac
 
 Now let's see our model:
 
-```
+```diff
 $ git diff Category.java
 diff --git a/Category.java b/Category.java
 index e04e7eb..c2aeddd 100644
@@ -183,7 +183,7 @@ index e04e7eb..c2aeddd 100644
 
 Since we can't change a column type, we renamed it. See the result:
 
-```
+```sql
 $ java -cp ~/projects/aamg/ GenerateAaMigration Category.java
 BEGIN TRANSACTION;
 
