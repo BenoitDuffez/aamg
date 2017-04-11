@@ -1,0 +1,2 @@
+# aamg
+ActiveAndroid migration generator
