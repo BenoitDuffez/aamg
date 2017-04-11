@@ -64,6 +64,7 @@ class Model {
         Pattern ext = Pattern.compile("extends\\s+([^\\s\\{]+)\\s*\\{?");
         Pattern keys = Pattern.compile("on(Delete|Update)\\s*=\\s*.*(SET_NULL|SET_DEFAULT|CASCADE|RESTRICT|NO_ACTION)");
 
+        boolean isModel = false;
         String line, packagePath = "";
         Map<String, String> imports = new HashMap<>();
         BufferedReader r = openFileAt(modelFile, sha1);
@@ -99,7 +100,8 @@ class Model {
             }
 
             // See if the @Table annotation contains the table name
-            if (tableName == null) {
+            if (tableName == null && line.contains("@Table")) {
+                isModel = true;
                 Matcher tableMatcher = table.matcher(line);
                 if (tableMatcher.find()) {
                     tableName = tableMatcher.group(1);
@@ -170,11 +172,15 @@ class Model {
         }
 
         // If the @Table annotation didn't set the table name, assume class name
-        if (tableName == null) {
+        if (tableName == null && isModel) {
             String className = modelFile.substring(modelFile.lastIndexOf("/") + 1);
             tableName = className.substring(0, className.indexOf("."));
         }
-        tableName = tableName.toLowerCase().replaceAll("\"", "");
+
+        // The table name will be null if there is no @Table annotation
+        if (tableName != null) {
+            tableName = tableName.replaceAll("\"", ""); // strip quotes
+        }
     }
 }
 
