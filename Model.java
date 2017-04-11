@@ -134,9 +134,26 @@ class Model {
                             col.update = upd;
                         }
 
-                        // If the column type is imported and is a model, save the foreign key table name
-                        if (imports.containsKey(colMatcher.group(2))) {
-                            col.fk = new Model(sha1, packagePath + imports.get(colMatcher.group(2)) + ".java").tableName;
+                        // Try to detect FK
+                        switch (colMatcher.group(2)) {
+                            case "Boolean": case "boolean":
+                            case "Integer": case "int":
+                            case "Double":  case "double":
+                            case "Float":   case "float":
+                            case "char":    case "CharSequence":    case "String":
+                                // no-op
+                                break;
+
+                            default:
+                                // If the column type is imported and is a model, save the foreign key table name
+                                if (imports.containsKey(colMatcher.group(2))) {
+                                    col.fk = new Model(sha1, packagePath + imports.get(colMatcher.group(2)) + ".java").tableName;
+                                }
+                                // try package local
+                                else if (col.fk == null) {
+                                    col.fk = new Model(sha1, packagePath + colMatcher.group(2) + ".java").tableName;
+                                }
+                                break;
                         }
 
                         fields.add(col);
