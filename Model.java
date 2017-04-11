@@ -49,9 +49,8 @@ class Model {
     /**
      * Parse a model class file
      */
-    Model(String sha1, String modelFile) throws IOException {
+    Model(String sha1, String modelFile, Map<String, String> types) throws IOException {
         if (!modelFile.endsWith("/com/activeandroid/Model.java")
-                && !modelFile.endsWith("/java/util/Calendar.java")
                 && !(new File(modelFile).exists())) {
             throw new IllegalArgumentException("Unable to open model file: " + modelFile);
         }
@@ -94,7 +93,7 @@ class Model {
             if (subclass.find()) {
                 if (imports.containsKey(subclass.group(1))) {
                     // Add all the parent's fields
-                    Model parent = new Model(sha1, packagePath + imports.get(subclass.group(1)) + ".java");
+                    Model parent = new Model(sha1, packagePath + imports.get(subclass.group(1)) + ".java", types);
                     fields.addAll(parent.fields);
                 }
             }
@@ -145,13 +144,20 @@ class Model {
                                 break;
 
                             default:
-                                // If the column type is imported and is a model, save the foreign key table name
-                                if (imports.containsKey(colMatcher.group(2))) {
-                                    col.fk = new Model(sha1, packagePath + imports.get(colMatcher.group(2)) + ".java").tableName;
+                                // See if this is a custom type provided by AA
+                                if (types.containsKey(colMatcher.group(2))) {
+                                    // not a FK so ignore
                                 }
-                                // try package local
+                                // if the column type is imported and is a model, save the foreign key table name
+                                else if (imports.containsKey(colMatcher.group(2))) {
+                                    col.fk = new Model(sha1, packagePath + imports.get(colMatcher.group(2)) + ".java", types).tableName;
+                                }
+                                // try package local foreign key class?
                                 else if (col.fk == null) {
-                                    col.fk = new Model(sha1, packagePath + colMatcher.group(2) + ".java").tableName;
+                                    col.fk = new Model(sha1, packagePath + colMatcher.group(2) + ".java", types).tableName;
+                                }
+                                else {
+                                    System.out.println("Unhandled column type: " + colMatcher.group(2));
                                 }
                                 break;
                         }

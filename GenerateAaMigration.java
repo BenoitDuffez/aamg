@@ -50,18 +50,26 @@ class GenerateAaMigration {
         }
         String sha1 = args.length > 1 ? args[1] : null;
 
+        // Get the list of custom types that there may exist in the model class (or its ancestors)
+        Map<String, String> types = getCustomTypes();
+
+        // Add the custom types provided by AA: https://github.com/pardom/ActiveAndroid/tree/master/src/com/activeandroid/serializer
+        types.put("BigDecimal", "String");
+        types.put("Calendar", "Long");
+        types.put("File", "String");
+        types.put("Date", "long");
+        types.put("UUID", "String");
+        types.put("Date", "long");
+
         // Get the model before and after migration
         Model fromModel, toModel;
         if (sha1 == null) {
-            fromModel = new Model("HEAD", model.toString());
-            toModel = new Model(null, model.toString());
+            fromModel = new Model("HEAD", model.toString(), types);
+            toModel = new Model(null, model.toString(), types);
         } else {
-            fromModel = new Model(sha1 + "~1", model.toString());
-            toModel = new Model(sha1, model.toString());
+            fromModel = new Model(sha1 + "~1", model.toString(), types);
+            toModel = new Model(sha1, model.toString(), types);
         }
-
-        // Get the list of custom types that there may exist in the model class (or its ancestors)
-        Map<String, String> types = getCustomTypes();
 
         // Do the diff and print a migration script
         new Migration(fromModel, toModel, types).writeMigrationScript();
